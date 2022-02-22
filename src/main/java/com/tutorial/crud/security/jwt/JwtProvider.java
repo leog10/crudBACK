@@ -1,5 +1,9 @@
 package com.tutorial.crud.security.jwt;
 
+import com.nimbusds.jwt.JWT;
+import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.JWTParser;
+import com.tutorial.crud.security.dto.JwtDto;
 import com.tutorial.crud.security.entity.UsuarioPrincipal;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
@@ -7,6 +11,7 @@ import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.SignatureException;
 import io.jsonwebtoken.UnsupportedJwtException;
+import java.text.ParseException;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -39,7 +44,7 @@ public class JwtProvider {
                 .setSubject(usuarioPrincipal.getUsername())
                 .claim("roles", roles)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(new Date().getTime() + expiration * 1000))
+                .setExpiration(new Date(new Date().getTime() + expiration))
                 .signWith(SignatureAlgorithm.HS512, secret.getBytes())
                 .compact();
     }
@@ -64,5 +69,20 @@ public class JwtProvider {
             logger.error("fail en la firma");
         }
         return false;        
+    }
+    
+    public String refreshToken(JwtDto jwtDto) throws ParseException {
+        JWT jwt = JWTParser.parse(jwtDto.getToken());
+        JWTClaimsSet claims = jwt.getJWTClaimsSet();
+        String nombreUsuario = claims.getSubject();
+        List<String> roles = (List<String>) claims.getClaim("roles");
+                
+        return Jwts.builder()                
+                .setSubject(nombreUsuario)
+                .claim("roles", roles)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(new Date().getTime() + expiration))
+                .signWith(SignatureAlgorithm.HS512, secret.getBytes())
+                .compact();
     }
 }
